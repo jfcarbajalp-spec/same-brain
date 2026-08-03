@@ -31,7 +31,7 @@ export function conectar(sesion, { onEstado, onConexion, onFatal }) {
   const latido = setInterval(() => {
     if (cerrado) return;
     api('/api/ping', sesion).catch(() => { /* ya lo verá el stream */ });
-  }, 5000);
+  }, 8000);
 
   const url = '/api/eventos?codigo=' + encodeURIComponent(sesion.codigo) +
     '&playerId=' + encodeURIComponent(sesion.playerId) +

@@ -20,9 +20,10 @@ MIN_JUGADORES = 2
 SEGUNDOS_RESPUESTA = 30
 GRACIA_HOST = 20          # segundos antes de traspasar el rol de host
 GRACIA_DESCONEXION = 8    # segundos antes de dejar de esperar a alguien
-# Cada cliente late cada 5 s. Si dejamos de oírle, lo damos por caído: no
+# Cada cliente late cada 8 s. Si dejamos de oírle, lo damos por caído: no
 # sirve fiarse de que falle la escritura en el socket (en Windows no falla).
-TIMEOUT_PRESENCIA = 16
+# Damos margen a tres latidos perdidos antes de dar a alguien por ausente.
+TIMEOUT_PRESENCIA = 25
 
 FASE_LOBBY = "lobby"
 FASE_PREGUNTA = "pregunta"

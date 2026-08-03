@@ -10,7 +10,9 @@ from .game import Sala
 # Sin vocales ni caracteres ambiguos (0/O, 1/I) para dictar el código en voz alta.
 ALFABETO = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 TTL_SALA = 3 * 60 * 60      # 3 h sin actividad -> se borra
-TICK = 1.0
+# Dos segundos bastan para los temporizadores y gastan la mitad de CPU, que
+# en el plan gratuito del hosting es un recurso muy escaso.
+TICK = 2.0
 
 
 class Registro(object):

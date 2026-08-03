@@ -28,6 +28,11 @@ RAIZ = os.path.dirname(os.path.abspath(__file__))
 PUBLICO = os.path.join(RAIZ, "public")
 HEARTBEAT = 10  # segundos entre pings del stream
 
+# En un hosting la plataforma impone el puerto. Allí registramos menos, que
+# escribir una línea por petición también cuesta CPU cuando hay muy poca.
+ALOJADO = bool(os.environ.get("PORT"))
+SILENCIO_ROTO = bool(os.environ.get("SAME_BRAIN_DEBUG"))
+
 ACCIONES_HOST = {"config", "empezar", "siguiente", "terminar", "revancha"}
 
 
@@ -64,10 +69,18 @@ def buscar_sala(datos, exigir_token=True):
 class Handler(BaseHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
     server_version = "SameBrain"
+    # Sin esto, cada conexión que el proxy deja abierta retiene un hilo
+    # bloqueado para siempre esperando otra petición. En un servidor con
+    # poca CPU eso se acumula hasta ahogar el proceso.
+    timeout = 65
 
     # -- utilidades ----------------------------------------------------
     def log_message(self, formato, *args):
-        if self.path.startswith("/api/eventos"):
+        # Ojo: en un timeout esto se llama antes de que exista self.path.
+        ruta = getattr(self, "path", "")
+        if ruta.startswith("/api/eventos") or ruta.startswith("/api/ping"):
+            return
+        if ALOJADO and not SILENCIO_ROTO:
             return
         sys.stderr.write("  %s\n" % (formato % args))
 
@@ -292,6 +305,15 @@ class Handler(BaseHTTPRequestHandler):
         return {"ok": True, "estado": vista}
 
 
+class Servidor(ThreadingHTTPServer):
+    daemon_threads = True
+    allow_reuse_address = True
+    # Por defecto son 5 conexiones en espera. Detrás de un proxy que abre
+    # varias a la vez, ese tope se desborda y el proxy recibe conexiones
+    # rechazadas, que es justo lo que rompía el servicio.
+    request_queue_size = 128
+
+
 def ip_local():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     try:
@@ -312,7 +334,7 @@ def main():
             pass
 
     # En un hosting el puerto lo impone la plataforma por variable de entorno.
-    alojado = bool(os.environ.get("PORT"))
+    alojado = ALOJADO
     puerto = int(os.environ.get("PORT") or 8080)
     if len(sys.argv) > 1 and not alojado:
         try:
@@ -321,8 +343,7 @@ def main():
             pass
 
     arrancar_reloj()
-    servidor = ThreadingHTTPServer(("0.0.0.0", puerto), Handler)
-    servidor.daemon_threads = True
+    servidor = Servidor(("0.0.0.0", puerto), Handler)
 
     print("")
     print("  SAME BRAIN 🧠  ·  %d preguntas cargadas" % TOTAL_PREGUNTAS)
