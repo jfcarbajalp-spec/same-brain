@@ -1,0 +1,15 @@
+# Despliegue en Render (https://render.com). Plan gratuito, sin tarjeta.
+# Al conectar el repositorio, Render lee este fichero y no hay que rellenar nada.
+services:
+  - type: web
+    name: same-brain
+    runtime: python
+    plan: free
+    region: frankfurt
+    buildCommand: "echo 'Same Brain no tiene dependencias: solo biblioteca estandar'"
+    startCommand: "python server.py"
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.7"
+      - key: PYTHONUNBUFFERED
+        value: "1"
